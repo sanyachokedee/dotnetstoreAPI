@@ -5,8 +5,8 @@ using StoreAPI.Models;
 
 namespace StoreAPI.Controllers;
 
-[Authorize] // กำหนดให้ต้องมีการ Login ก่อนเข้าถึง API ทั้งหมด
 // [Authorize(Roles = UserRoles.Admin)] // กำหนดให้เฉพาะ Admin เท่านั้นที่สามารถเข้าถึง API นี้ได้
+[Authorize]  // ถ้ามีการใช้ Authorize
 [ApiController] // กำหนดให้ Class นี้เป็น API Controller
 [Route("api/[controller]")] // กำหนด Route ของ API Controller
 public class ProductController : ControllerBase
@@ -68,9 +68,13 @@ public class ProductController : ControllerBase
                     p.product_name,
                     p.unit_price,
                     p.unit_in_stock,
+                    p.product_picture,
+                    p.created_date,
+                    p.modified_date,
                     c.category_name
                 }
-            ).ToList();
+            ).OrderByDescending(p => p.product_id)
+            .ToList();
 
         // ส่งข้อมูลกลับไปให้ผู้ใช้งาน
         return Ok(products);
@@ -78,6 +82,7 @@ public class ProductController : ControllerBase
 
     // ฟังก์ชันสำหรับการดึงข้อมูลสินค้าตาม id
     // GET: /api/Product/{id}
+    // [AllowAnonymous]   // ใส่ใน method เพื่อให้สามารถใช้งานได้ไม่ติด Authorize
     [HttpGet("{id}")]
     public ActionResult<product> GetProduct(int id)
     {
@@ -103,12 +108,16 @@ public class ProductController : ControllerBase
         _context.products.Add(product);
 
         // ตรวจสอบว่ามีการอัพโหลดไฟล์รูปภาพหรือไม่
-        if(image != null){
+        if (image != null)
+        {
             // กำหนดชื่อไฟล์รูปภาพใหม่
             string fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
 
-            // บันทึกไฟล์รูปภาพ
-            string uploadFolder = Path.Combine(_env.ContentRootPath, "uploads");
+            // บันทึกไฟล์รูปภาพ ยกเลิก
+            // string uploadFolder = Path.Combine(_env.ContentRootPath, "uploads");
+
+            // บันทึกไฟล์ภาพลงในโฟลเดอร์ wwwroot/uploads
+            string uploadFolder = Path.Combine(_env.WebRootPath, "uploads");
 
             // ตรวจสอบว่าโฟลเดอร์ uploads มีหรือไม่
             if (!Directory.Exists(uploadFolder))
